@@ -7,7 +7,7 @@ const { baseItems } = useItems();
 
 <template>
   <div>
-    <p class="count">{{ baseItems.length }} przedmiotów</p>
+    <p class="count">{{ baseItems.length }} items</p>
     <div class="grid">
       <ItemCard v-for="item in baseItems" :key="item.name" :item="item" />
     </div>

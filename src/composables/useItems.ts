@@ -14,7 +14,7 @@ export interface Item {
 
 export const SETS: SetValue[] = [16, 4.5, 17];
 
-// Stan setu współdzielony między widokami
+// Shared set state across views
 export const selectedSet = ref<SetValue>(16);
 
 const items = allItems as Item[];

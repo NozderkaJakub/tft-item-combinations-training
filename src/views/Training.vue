@@ -5,7 +5,7 @@ import ItemCard from "../components/ItemCard.vue";
 
 const { baseItems, combinedItems } = useItems();
 
-// --- Podpowiedź (hint) ---
+// --- Hint ---
 const HINT_DELAY = 1500;
 const hintState = ref<"idle" | "loading" | "shown">("idle");
 const hintItem = ref<Item | null>(null);
@@ -18,7 +18,7 @@ function resetHint() {
   hintItem.value = null;
 }
 
-// --- Stan gry ---
+// --- Game state ---
 const seenNames = ref<Set<string>>(new Set());
 const targetItem = ref<Item | null>(null);
 const slot1 = ref<Item | null>(null);
@@ -43,7 +43,7 @@ function pickRandom() {
   resetHint();
 }
 
-// Gdy zmienia się set, zresetuj historię i losuj nowy przedmiot
+// When set changes, reset history and pick a new item
 watch(combinedItems, () => {
   seenNames.value.clear();
   pickRandom();
@@ -55,7 +55,7 @@ function onTargetMouseEnter() {
   hintTimer = setTimeout(() => {
     if (!targetItem.value?.combine) return;
     const pick = targetItem.value.combine[0];
-    // Znajdź obiekt Item po nazwie spośród baseItems
+    // Find Item object by name from baseItems
     hintItem.value = baseItems.value.find((i) => i.name === pick) ?? null;
     hintState.value = "shown";
   }, HINT_DELAY);
@@ -65,7 +65,7 @@ function onTargetMouseLeave() {
   if (hintState.value === "loading") {
     resetHint();
   }
-  // Jeśli "shown" — popup zostaje do następnego pickRandom
+  // If "shown" — popup stays until next pickRandom
 }
 
 // --- Drag & Drop ---
@@ -91,7 +91,7 @@ function clearSlot(slotNum: 1 | 2) {
   else slot2.value = null;
 }
 
-// --- Sprawdzenie ---
+// --- Validation ---
 const canCheck = computed(() => slot1.value !== null && slot2.value !== null);
 
 function check() {
@@ -111,9 +111,9 @@ function next() {
 <template>
   <div class="training">
 
-    <!-- Cel: losowy przedmiot złożony -->
+    <!-- Target: random combined item -->
     <section class="target-section">
-      <p class="section-label">Z czego składa się ten przedmiot?</p>
+      <p class="section-label">What is this item made of?</p>
       <div
         class="target-card"
         v-if="targetItem"
@@ -133,7 +133,7 @@ function next() {
             <circle class="hint-ring-fill" cx="18" cy="18" r="15" />
           </svg>
 
-          <!-- Popup z podpowiedzią -->
+          <!-- Hint popup -->
           <div v-if="hintState === 'shown' && hintItem" class="hint-popup">
             <img :src="getImageUrl(hintItem.name)" :alt="hintItem.name" />
             <span>{{ hintItem.name }}</span>
@@ -144,7 +144,7 @@ function next() {
       </div>
     </section>
 
-    <!-- Sloty na przedmioty bazowe -->
+    <!-- Slots for base items -->
     <section class="slots-section">
       <div
         class="slot"
@@ -155,9 +155,9 @@ function next() {
         <template v-if="slot1">
           <img :src="getImageUrl(slot1.name)" :alt="slot1.name" />
           <span class="slot-name">{{ slot1.name }}</span>
-          <button class="clear-btn" @click="clearSlot(1)" title="Usuń">✕</button>
+          <button class="clear-btn" @click="clearSlot(1)" title="Remove">✕</button>
         </template>
-        <span v-else class="slot-placeholder">Upuść tutaj</span>
+        <span v-else class="slot-placeholder">Drop here</span>
       </div>
 
       <span class="plus">+</span>
@@ -171,20 +171,20 @@ function next() {
         <template v-if="slot2">
           <img :src="getImageUrl(slot2.name)" :alt="slot2.name" />
           <span class="slot-name">{{ slot2.name }}</span>
-          <button class="clear-btn" @click="clearSlot(2)" title="Usuń">✕</button>
+          <button class="clear-btn" @click="clearSlot(2)" title="Remove">✕</button>
         </template>
-        <span v-else class="slot-placeholder">Upuść tutaj</span>
+        <span v-else class="slot-placeholder">Drop here</span>
       </div>
     </section>
 
-    <!-- Wynik + przyciski -->
+    <!-- Result + buttons -->
     <section class="actions">
       <div
         v-if="result"
         class="result-badge"
         :class="result"
       >
-        {{ result === "correct" ? "Poprawnie!" : "Błędna kombinacja" }}
+        {{ result === "correct" ? "Correct!" : "Wrong combination" }}
       </div>
 
       <div class="buttons">
@@ -193,24 +193,24 @@ function next() {
           :disabled="!canCheck"
           @click="check"
         >
-          Zatwierdź
+          Confirm
         </button>
         <button class="btn btn-next" :disabled="allSeen" @click="next">
-          Następny
+          Next
         </button>
       </div>
 
       <p v-if="allSeen" class="all-seen">
-        Wszystkie przedmioty zostały pokazane. Odśwież stronę, aby zacząć od nowa.
+        All items have been shown. Refresh the page to start over.
       </p>
       <p v-else class="seen-count">
-        {{ seenNames.size }} / {{ combinedItems.length }} pokazanych
+        {{ seenNames.size }} / {{ combinedItems.length }} shown
       </p>
     </section>
 
-    <!-- Siatka przedmiotów bazowych -->
+    <!-- Base items grid -->
     <section class="base-section">
-      <p class="section-label">Przedmioty bazowe</p>
+      <p class="section-label">Base items</p>
       <div class="base-grid">
         <div
           v-for="item in baseItems"
@@ -235,7 +235,7 @@ function next() {
   gap: 2rem;
 }
 
-/* --- Cel --- */
+/* --- Target --- */
 .target-section {
   display: flex;
   flex-direction: column;
@@ -355,7 +355,7 @@ function next() {
   color: #e2e8f0;
 }
 
-/* --- Sloty --- */
+/* --- Slots --- */
 .slots-section {
   display: flex;
   align-items: center;
@@ -437,7 +437,7 @@ function next() {
   user-select: none;
 }
 
-/* --- Akcje --- */
+/* --- Actions --- */
 .actions {
   display: flex;
   flex-direction: column;
@@ -517,7 +517,7 @@ function next() {
   max-width: 300px;
 }
 
-/* --- Siatka bazowych --- */
+/* --- Base items grid --- */
 .base-section {
   width: 100%;
   display: flex;
