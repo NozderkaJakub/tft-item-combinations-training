@@ -51,6 +51,36 @@ body {
   padding: 2rem 1.5rem;
 }
 
+@media (max-width: 600px) {
+  .app {
+    padding: 1rem 0.75rem;
+  }
+
+  h1 {
+    font-size: 1.3rem;
+    margin-bottom: 0.75rem;
+  }
+
+  .set-selector {
+    gap: 0.5rem;
+    margin-bottom: 0.75rem;
+  }
+
+  .set-btn {
+    padding: 0.35rem 0.75rem;
+    font-size: 0.8rem;
+  }
+
+  .nav-link {
+    padding: 0.5rem 1rem;
+    font-size: 0.85rem;
+  }
+
+  header {
+    margin-bottom: 1.25rem;
+  }
+}
+
 header {
   text-align: center;
   margin-bottom: 2.5rem;

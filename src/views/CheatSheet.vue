@@ -1,15 +1,20 @@
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted } from "vue";
+import { ref, computed, onMounted, onUnmounted, nextTick } from "vue";
 import { useItems, getImageUrl, type Item } from "../composables/useItems";
 
 const { baseItems, combinedItems } = useItems();
 
 const selectedBase = ref<Item | null>(null);
 const selectedCombined = ref<Item | null>(null);
+
 const baseGridRef = ref<HTMLElement | null>(null);
 const combinedGridRef = ref<HTMLElement | null>(null);
 const baseDetailRef = ref<HTMLElement | null>(null);
 const combinedDetailRef = ref<HTMLElement | null>(null);
+
+// Popup position – computed from the clicked button, applied as inline style
+// on the teleported fixed element
+const popupStyle = ref<Record<string, string>>({});
 
 // When a base item is clicked: build recipe rows
 // Each row = { otherBase: Item, result: Item }
@@ -47,17 +52,86 @@ function closeAll() {
   selectedCombined.value = null;
 }
 
-function selectBase(item: Item) {
+/**
+ * Compute `position: fixed` top/left/maxWidth for the popup.
+ *
+ * Strategy:
+ *   top    = btn.bottom + 6px (below the button)
+ *   left   = btn.left  (desktop) | gridEl.left  (mobile, ≤600px)
+ *   right  = never exceeds window.innerWidth - 8
+ *
+ * We do NOT use Math.max(8, left) because that is what caused the popup to
+ * always be stuck at the left edge: on a narrow screen
+ *   window.innerWidth - 8 - POPUP_MAX_W  can be negative,
+ *   Math.min(btn.left, negative) → negative,
+ *   Math.max(8, negative) → 8.
+ *
+ * Instead we compute `left` first and then derive `maxWidth` so the right
+ * edge = left + maxWidth never exceeds window.innerWidth - 8.
+ */
+function positionPopup(btn: HTMLElement, gridEl: HTMLElement | null) {
+  const btnRect = btn.getBoundingClientRect();
+  const GAP = 6;
+  const EDGE = 8; // minimum distance from right viewport edge
+
+  const isMobile = window.innerWidth <= 600;
+
+  // Left anchor: on mobile align to the grid container; on desktop to the button
+  let leftAnchor: number;
+  if (isMobile && gridEl) {
+    leftAnchor = gridEl.getBoundingClientRect().left;
+  } else {
+    leftAnchor = btnRect.left;
+  }
+
+  // Available width from leftAnchor to right viewport edge (with margin)
+  const availableWidth = window.innerWidth - leftAnchor - EDGE;
+  // Cap at a sensible maximum
+  const maxWidth = Math.min(380, availableWidth);
+
+  popupStyle.value = {
+    top: `${btnRect.bottom + GAP}px`,
+    left: `${leftAnchor}px`,
+    width: `${maxWidth}px`,
+  };
+
+  // After Vue renders the popup, check if it goes below the viewport and flip
+  // it above the button if needed.
+  nextTick(() => {
+    const el = baseDetailRef.value ?? combinedDetailRef.value;
+    if (!el) return;
+    const popRect = el.getBoundingClientRect();
+    if (popRect.bottom > window.innerHeight - EDGE) {
+      popupStyle.value = {
+        ...popupStyle.value,
+        top: `${Math.max(EDGE, btnRect.top - GAP - popRect.height)}px`,
+      };
+    }
+  });
+}
+
+function selectBase(item: Item, e: MouseEvent) {
   selectedCombined.value = null;
-  selectedBase.value = selectedBase.value?.name === item.name ? null : item;
+  if (selectedBase.value?.name === item.name) {
+    selectedBase.value = null;
+    return;
+  }
+  selectedBase.value = item;
+  nextTick(() => positionPopup(e.currentTarget as HTMLElement, baseGridRef.value));
 }
 
-function selectCombined(item: Item) {
+function selectCombined(item: Item, e: MouseEvent) {
   selectedBase.value = null;
-  selectedCombined.value = selectedCombined.value?.name === item.name ? null : item;
+  if (selectedCombined.value?.name === item.name) {
+    selectedCombined.value = null;
+    return;
+  }
+  selectedCombined.value = item;
+  nextTick(() => positionPopup(e.currentTarget as HTMLElement, combinedGridRef.value));
 }
 
-function onDocumentClick(e: MouseEvent) {
+// Close popup on pointerdown outside – pointerdown fires on both mouse and touch
+function onPointerDown(e: PointerEvent) {
   const target = e.target as Node;
   const insideBase =
     baseGridRef.value?.contains(target) || baseDetailRef.value?.contains(target);
@@ -68,8 +142,8 @@ function onDocumentClick(e: MouseEvent) {
   }
 }
 
-onMounted(() => document.addEventListener("click", onDocumentClick));
-onUnmounted(() => document.removeEventListener("click", onDocumentClick));
+onMounted(() => document.addEventListener("pointerdown", onPointerDown));
+onUnmounted(() => document.removeEventListener("pointerdown", onPointerDown));
 </script>
 
 <template>
@@ -84,39 +158,12 @@ onUnmounted(() => document.removeEventListener("click", onDocumentClick));
           :key="item.name"
           class="item-btn"
           :class="{ active: selectedBase?.name === item.name }"
-          @click="selectBase(item)"
+          @click="selectBase(item, $event)"
           :title="item.name"
         >
           <img :src="getImageUrl(item.name)" :alt="item.name" />
           <span class="item-label">{{ item.name }}</span>
         </button>
-      </div>
-
-      <!-- Recipes for selected base item -->
-      <div class="detail-anchor">
-        <transition name="fade">
-          <div v-if="selectedBase" class="detail-box" ref="baseDetailRef">
-            <p class="detail-title">
-              <img :src="getImageUrl(selectedBase.name)" :alt="selectedBase.name" class="detail-title-img" />
-              <span>{{ selectedBase.name }}</span>
-              <span class="detail-sub">combines into {{ baseRecipes.length }} items</span>
-            </p>
-            <div class="recipe-list">
-              <div v-for="row in baseRecipes" :key="row.result.name" class="recipe-row">
-                <img :src="getImageUrl(selectedBase.name)" :alt="selectedBase.name" class="ri" />
-                <span class="plus-sign">+</span>
-                <template v-if="row.otherBase">
-                  <img :src="getImageUrl(row.otherBase.name)" :alt="row.otherBase.name" class="ri" />
-                  <span class="recipe-name-small">{{ row.otherBase.name }}</span>
-                </template>
-                <span v-else class="ri-placeholder">?</span>
-                <span class="arrow">→</span>
-                <img :src="getImageUrl(row.result.name)" :alt="row.result.name" class="ri ri-result" />
-                <span class="recipe-name">{{ row.result.name }}</span>
-              </div>
-            </div>
-          </div>
-        </transition>
       </div>
     </section>
 
@@ -129,40 +176,72 @@ onUnmounted(() => document.removeEventListener("click", onDocumentClick));
           :key="item.name"
           class="item-btn item-btn-sm"
           :class="{ active: selectedCombined?.name === item.name }"
-          @click="selectCombined(item)"
+          @click="selectCombined(item, $event)"
           :title="item.name"
         >
           <img :src="getImageUrl(item.name)" :alt="item.name" />
           <span class="item-label">{{ item.name }}</span>
         </button>
       </div>
-
-      <!-- Recipe for selected combined item -->
-      <transition name="fade">
-        <div v-if="selectedCombined" class="detail-box" ref="combinedDetailRef">
-          <p class="detail-title">
-            <img :src="getImageUrl(selectedCombined.name)" :alt="selectedCombined.name" class="detail-title-img" />
-            <span>{{ selectedCombined.name }}</span>
-            <span class="detail-sub">is crafted from</span>
-          </p>
-          <div class="recipe-row recipe-row-combined">
-            <template v-for="(comp, idx) in combinedRecipe" :key="idx">
-              <span v-if="idx > 0" class="plus-sign">+</span>
-              <template v-if="comp">
-                <img :src="getImageUrl(comp.name)" :alt="comp.name" class="ri ri-lg" />
-                <span class="recipe-name">{{ comp.name }}</span>
-              </template>
-              <span v-else class="ri-placeholder ri-lg">?</span>
-            </template>
-            <span class="arrow">→</span>
-            <img :src="getImageUrl(selectedCombined.name)" :alt="selectedCombined.name" class="ri ri-lg ri-result" />
-            <span class="recipe-name">{{ selectedCombined.name }}</span>
-          </div>
-        </div>
-      </transition>
     </section>
 
   </div>
+
+  <!-- Popups rendered at body level via Teleport so they escape overflow:hidden parents -->
+  <Teleport to="body">
+    <transition name="popup-fade">
+      <div
+        v-if="selectedBase"
+        class="cs-popup"
+        ref="baseDetailRef"
+        :style="popupStyle"
+      >
+        <p class="detail-title">
+          <img :src="getImageUrl(selectedBase.name)" :alt="selectedBase.name" class="detail-title-img" />
+          <span>{{ selectedBase.name }}</span>
+          <span class="detail-sub">combines into {{ baseRecipes.length }} items</span>
+        </p>
+        <div class="recipe-list">
+          <div v-for="row in baseRecipes" :key="row.result.name" class="recipe-row">
+            <span class="plus-sign">+</span>
+            <template v-if="row.otherBase">
+              <img :src="getImageUrl(row.otherBase.name)" :alt="row.otherBase.name" class="ri" />
+              <span class="recipe-name-small">{{ row.otherBase.name }}</span>
+            </template>
+            <span v-else class="ri-placeholder">?</span>
+            <span class="arrow">→</span>
+            <img :src="getImageUrl(row.result.name)" :alt="row.result.name" class="ri ri-result" />
+            <span class="recipe-name">{{ row.result.name }}</span>
+          </div>
+        </div>
+      </div>
+    </transition>
+
+    <transition name="popup-fade">
+      <div
+        v-if="selectedCombined"
+        class="cs-popup"
+        ref="combinedDetailRef"
+        :style="popupStyle"
+      >
+        <p class="detail-title">
+          <img :src="getImageUrl(selectedCombined.name)" :alt="selectedCombined.name" class="detail-title-img" />
+          <span>{{ selectedCombined.name }}</span>
+          <span class="detail-sub">is crafted from</span>
+        </p>
+        <div class="recipe-row recipe-row-combined">
+          <template v-for="(comp, idx) in combinedRecipe" :key="idx">
+            <span v-if="idx > 0" class="plus-sign">+</span>
+            <template v-if="comp">
+              <img :src="getImageUrl(comp.name)" :alt="comp.name" class="ri ri-lg" />
+              <span class="recipe-name">{{ comp.name }}</span>
+            </template>
+            <span v-else class="ri-placeholder ri-lg">?</span>
+          </template>
+        </div>
+      </div>
+    </transition>
+  </Teleport>
 </template>
 
 <style scoped>
@@ -171,9 +250,15 @@ onUnmounted(() => document.removeEventListener("click", onDocumentClick));
   display: grid;
   grid-template-columns: 1fr 2fr;
   gap: 1.5rem;
-  /* Fill the viewport height minus the header (~160px) */
   height: calc(100vh - 200px);
   min-height: 0;
+}
+
+@media (max-width: 600px) {
+  .cheat-sheet {
+    grid-template-columns: 1fr;
+    height: auto;
+  }
 }
 
 .panel {
@@ -182,18 +267,6 @@ onUnmounted(() => document.removeEventListener("click", onDocumentClick));
   gap: 0.75rem;
   min-height: 0;
   overflow-y: auto;
-}
-
-.panel-base {
-  position: relative;
-  overflow: visible;
-}
-
-/* Anchor sits in the flex flow (zero height), detail-box floats out of it */
-.detail-anchor {
-  position: relative;
-  height: 0;
-  overflow: visible;
 }
 
 .panel-combined {
@@ -273,28 +346,46 @@ onUnmounted(() => document.removeEventListener("click", onDocumentClick));
   -webkit-box-orient: vertical;
 }
 
-/* --- Detail box --- */
-.detail-box {
+@media (max-width: 600px) {
+  .item-btn img {
+    width: 36px;
+    height: 36px;
+  }
+
+  .item-btn-sm img {
+    width: 30px;
+    height: 30px;
+  }
+}
+
+/* --- Fade transition --- */
+.popup-fade-enter-active,
+.popup-fade-leave-active {
+  transition: opacity 0.18s ease, transform 0.18s ease;
+}
+.popup-fade-enter-from,
+.popup-fade-leave-to {
+  opacity: 0;
+  transform: translateY(6px);
+}
+</style>
+
+<!-- cs-popup is teleported to <body> so it needs non-scoped global styles -->
+<style>
+.cs-popup {
+  position: fixed;
+  z-index: 1000;
+  box-sizing: border-box;
   background: #0f1627;
   border: 1px solid #2d3a5a;
   border-radius: 10px;
   padding: 0.75rem 1rem;
-  flex-shrink: 0;
+  overflow-x: hidden;
   overflow-y: auto;
-  max-height: 55%;
+  max-height: calc(100vh - 80px);
 }
 
-.panel-base .detail-box {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: max-content;
-  max-width: 480px;
-  max-height: none;
-  z-index: 10;
-}
-
-.detail-title {
+.cs-popup .detail-title {
   display: flex;
   align-items: center;
   gap: 8px;
@@ -305,56 +396,55 @@ onUnmounted(() => document.removeEventListener("click", onDocumentClick));
   flex-wrap: wrap;
 }
 
-.detail-title-img {
+.cs-popup .detail-title-img {
   width: 28px;
   height: 28px;
   border-radius: 4px;
 }
 
-.detail-sub {
+.cs-popup .detail-sub {
   font-size: 0.72rem;
   font-weight: 400;
   color: #64748b;
   margin-left: 2px;
 }
 
-/* --- Recipe list --- */
-.recipe-list {
+.cs-popup .recipe-list {
   display: flex;
   flex-direction: column;
   gap: 6px;
 }
 
-.recipe-row {
+.cs-popup .recipe-row {
   display: flex;
   align-items: center;
   gap: 6px;
   flex-wrap: wrap;
 }
 
-.recipe-row-combined {
+.cs-popup .recipe-row-combined {
   gap: 10px;
   margin-top: 0.25rem;
 }
 
-.ri {
+.cs-popup .ri {
   width: 28px;
   height: 28px;
   border-radius: 4px;
   flex-shrink: 0;
 }
 
-.ri-lg {
+.cs-popup .ri-lg {
   width: 40px;
   height: 40px;
   border-radius: 6px;
 }
 
-.ri-result {
+.cs-popup .ri-result {
   border: 1px solid #c89b3c;
 }
 
-.ri-placeholder {
+.cs-popup .ri-placeholder {
   width: 28px;
   height: 28px;
   border-radius: 4px;
@@ -367,38 +457,27 @@ onUnmounted(() => document.removeEventListener("click", onDocumentClick));
   flex-shrink: 0;
 }
 
-.plus-sign {
+.cs-popup .plus-sign {
   font-size: 0.9rem;
   color: #64748b;
   user-select: none;
 }
 
-.arrow {
+.cs-popup .arrow {
   font-size: 0.9rem;
   color: #c89b3c;
   user-select: none;
   margin: 0 2px;
 }
 
-.recipe-name {
+.cs-popup .recipe-name {
   font-size: 0.75rem;
   color: #c89b3c;
   font-weight: 600;
 }
 
-.recipe-name-small {
+.cs-popup .recipe-name-small {
   font-size: 0.65rem;
   color: #94a3b8;
-}
-
-/* --- Fade transition --- */
-.fade-enter-active,
-.fade-leave-active {
-  transition: opacity 0.18s ease, transform 0.18s ease;
-}
-.fade-enter-from,
-.fade-leave-to {
-  opacity: 0;
-  transform: translateY(6px);
 }
 </style>
