@@ -26,9 +26,6 @@ const slot2 = ref<Item | null>(null);
 const result = ref<"correct" | "wrong" | null>(null);
 const draggedItem = ref<Item | null>(null);
 
-// Selected item for tap-to-place (mobile)
-const tappedItem = ref<Item | null>(null);
-
 const allSeen = computed(
   () => combinedItems.value.length > 0 &&
         combinedItems.value.every((i) => seenNames.value.has(i.name))
@@ -43,7 +40,6 @@ function pickRandom() {
   slot1.value = null;
   slot2.value = null;
   result.value = null;
-  tappedItem.value = null;
   resetHint();
 }
 
@@ -75,7 +71,6 @@ function onTargetMouseLeave() {
 // --- Drag & Drop (desktop) ---
 function onDragStart(item: Item) {
   draggedItem.value = item;
-  tappedItem.value = null;
 }
 
 function onDragOver(e: DragEvent) {
@@ -91,21 +86,21 @@ function onDropSlot(slotNum: 1 | 2) {
 }
 
 // --- Tap to place (mobile) ---
+// Tapping a base item immediately fills the first empty slot.
+// If both slots are filled, the tap is ignored (user must clear a slot first).
 function onTapItem(item: Item) {
-  // If already tapped — deselect
-  if (tappedItem.value?.name === item.name) {
-    tappedItem.value = null;
-    return;
+  result.value = null;
+  if (!slot1.value) {
+    slot1.value = item;
+  } else if (!slot2.value) {
+    slot2.value = item;
   }
-  tappedItem.value = item;
+  // Both slots occupied — do nothing
 }
 
-function onTapSlot(slotNum: 1 | 2) {
-  if (!tappedItem.value) return;
-  result.value = null;
-  if (slotNum === 1) slot1.value = tappedItem.value;
-  else slot2.value = tappedItem.value;
-  tappedItem.value = null;
+function onTapSlot(_slotNum: 1 | 2) {
+  // Slots are no longer used as drop targets for tap-to-place;
+  // kept for drag-and-drop compatibility.
 }
 
 function clearSlot(slotNum: 1 | 2) {
@@ -181,7 +176,7 @@ function next() {
           <span class="slot-name">{{ slot1.name }}</span>
           <button class="clear-btn" @click.stop="clearSlot(1)" title="Remove">✕</button>
         </template>
-        <span v-else class="slot-placeholder">{{ tappedItem ? 'Tap to place' : 'Drop here' }}</span>
+        <span v-else class="slot-placeholder">Drop here</span>
       </div>
 
       <span class="plus">+</span>
@@ -198,7 +193,7 @@ function next() {
           <span class="slot-name">{{ slot2.name }}</span>
           <button class="clear-btn" @click.stop="clearSlot(2)" title="Remove">✕</button>
         </template>
-        <span v-else class="slot-placeholder">{{ tappedItem ? 'Tap to place' : 'Drop here' }}</span>
+        <span v-else class="slot-placeholder">Drop here</span>
       </div>
     </section>
 
@@ -241,7 +236,6 @@ function next() {
           v-for="item in baseItems"
           :key="item.name"
           class="base-item"
-          :class="{ tapped: tappedItem?.name === item.name }"
           draggable="true"
           @dragstart="onDragStart(item)"
           @click="onTapItem(item)"
@@ -567,11 +561,6 @@ function next() {
 
 .base-item:active {
   cursor: grabbing;
-}
-
-.base-item.tapped :deep(.item-card) {
-  border-color: #c89b3c;
-  background: #29200a;
 }
 
 @media (max-width: 600px) {
