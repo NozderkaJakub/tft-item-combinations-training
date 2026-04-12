@@ -47,6 +47,14 @@ const combinedRecipe = computed(() => {
   );
 });
 
+// Returns the two base component Items for a given combined item
+function getComponents(item: Item): [Item | null, Item | null] {
+  if (!item.combine || item.combine.length < 2) return [null, null];
+  const a = baseItems.value.find((b) => b.name === item.combine![0]) ?? null;
+  const b = baseItems.value.find((b) => b.name === item.combine![1]) ?? null;
+  return [a, b];
+}
+
 function closeAll() {
   selectedBase.value = null;
   selectedCombined.value = null;
@@ -179,7 +187,19 @@ onUnmounted(() => document.removeEventListener("pointerdown", onPointerDown));
           @click="selectCombined(item, $event)"
           :title="item.name"
         >
-          <img :src="getImageUrl(item.name)" :alt="item.name" />
+          <div class="combined-img-wrap">
+            <img :src="getImageUrl(item.name)" :alt="item.name" />
+            <template v-for="(comp, idx) in getComponents(item)" :key="idx">
+              <img
+                v-if="comp"
+                :src="getImageUrl(comp.name)"
+                :alt="comp.name"
+                class="component-badge"
+                :class="idx === 0 ? 'component-badge-left' : 'component-badge-right'"
+                :title="comp.name"
+              />
+            </template>
+          </div>
           <span class="item-label">{{ item.name }}</span>
         </button>
       </div>
@@ -293,7 +313,7 @@ onUnmounted(() => document.removeEventListener("pointerdown", onPointerDown));
 
 .combined-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(52px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(56px, 1fr));
   gap: 5px;
   align-items: start;
   align-content: start;
@@ -304,7 +324,7 @@ onUnmounted(() => document.removeEventListener("pointerdown", onPointerDown));
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 3px;
+  gap: 6px;
   background: #1a2035;
   border: 2px solid #2d3a5a;
   border-radius: 8px;
@@ -322,16 +342,43 @@ onUnmounted(() => document.removeEventListener("pointerdown", onPointerDown));
   background: #29200a;
 }
 
-.item-btn img {
+.item-btn > img {
   width: 44px;
   height: 44px;
   border-radius: 6px;
   display: block;
 }
 
-.item-btn-sm img {
+.item-btn-sm > img,
+.item-btn-sm .combined-img-wrap > img:first-child {
   width: 36px;
   height: 36px;
+}
+
+/* --- Combined item: ingredient badges in bottom corners --- */
+.combined-img-wrap {
+  position: relative;
+  display: inline-block;
+  line-height: 0;
+}
+
+.component-badge {
+  position: absolute;
+  bottom: -3px;
+  width: 16px;
+  height: 16px;
+  border-radius: 4px;
+  border: 1px solid #0f1627;
+  background: #0f1627;
+  pointer-events: none;
+}
+
+.component-badge-left {
+  left: -2px;
+}
+
+.component-badge-right {
+  right: -2px;
 }
 
 .item-label {
@@ -347,14 +394,35 @@ onUnmounted(() => document.removeEventListener("pointerdown", onPointerDown));
 }
 
 @media (max-width: 600px) {
-  .item-btn img {
-    width: 36px;
-    height: 36px;
+  .item-btn > img {
+    width: 56px;
+    height: 56px;
   }
 
-  .item-btn-sm img {
-    width: 30px;
-    height: 30px;
+  .item-btn-sm > img,
+  .item-btn-sm .combined-img-wrap > img:first-child {
+    width: 48px;
+    height: 48px;
+  }
+
+  .component-badge {
+    width: 18px;
+    height: 18px;
+  }
+
+  .item-label {
+    font-size: 0.65rem;
+    max-width: 64px;
+  }
+
+  .base-grid {
+    grid-template-columns: repeat(auto-fill, minmax(66px, 1fr));
+    gap: 6px;
+  }
+
+  .combined-grid {
+    grid-template-columns: repeat(auto-fill, minmax(66px, 1fr));
+    gap: 6px;
   }
 }
 
