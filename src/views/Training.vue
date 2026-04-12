@@ -528,7 +528,8 @@ function next() {
 
 .base-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(64px, 1fr));
+  grid-template-columns: repeat(auto-fit, 64px);
+  justify-content: center;
   gap: 10px;
   width: 100%;
 }
