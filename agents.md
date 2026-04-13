@@ -194,3 +194,26 @@ interface Item {
 ### Modifying the Hint System
 
 The hint system in `Training.vue` is a 5-state machine (`"idle"` | `"loading"` | `"shown"` | `"loading2"` | `"shown2"`). The loading animation is a CSS ring that fills over 1.5 seconds. Desktop uses `mouseenter`/`mouseleave` events; mobile uses `pointerup` with `pointerType === "touch"`. Keep both paths in sync when modifying hint behavior.
+
+---
+
+## Keeping Documentation Up to Date
+
+When making changes that affect the project's structure, features, architecture, or conventions, update the relevant documentation files as part of the same task:
+
+- **`AGENTS.md`** — update whenever you:
+  - Add, remove, or rename source files or directories (update the File Structure section)
+  - Change the tech stack, router configuration, or build setup
+  - Add a new TFT set or change the set list
+  - Introduce new coding conventions or architectural patterns
+  - Add new reusable composables or components
+  - Change the data model (`Item` interface or `items-clean.json` structure)
+  - Add a new game mode or view (update the Feature Implementation Guide)
+
+- **`README.md`** — update whenever you:
+  - Add or remove user-facing features or game modes
+  - Change how the app is run, built, or deployed
+  - Add prerequisites or new environment requirements
+  - Change the project description in a way visible to end users or contributors
+
+Both files should always accurately reflect the current state of the project. Do not leave them stale after structural or feature changes.
