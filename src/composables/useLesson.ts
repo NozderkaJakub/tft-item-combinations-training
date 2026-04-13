@@ -154,11 +154,10 @@ export function useLesson() {
       }
     }
 
-    // Choose extra base items
-    const requiredNames = new Set(required.map((i) => i.name));
-    const extraPool = allBase.filter(
-      (i) => !EXCLUDED_FROM_EXTRA.includes(i.name) && !requiredNames.has(i.name)
-    );
+    // Choose extra distractor base items — always picked from the full eligible pool
+    // (excluding Spatula/Frying Pan only), regardless of whether they already appear
+    // in required. This guarantees exactly EXTRA_BASE_ITEMS distractors are added.
+    const extraPool = allBase.filter((i) => !EXCLUDED_FROM_EXTRA.includes(i.name));
     const extras = shuffle(extraPool).slice(0, EXTRA_BASE_ITEMS);
 
     return shuffle([...required, ...extras]);
