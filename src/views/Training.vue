@@ -514,7 +514,6 @@ function next() {
   gap: 6px;
   white-space: nowrap;
   z-index: 20;
-  animation: popup-in 0.2s ease;
 }
 
 .hint-popup::after {
@@ -533,6 +532,7 @@ function next() {
   right: calc(100% + 12px);
   bottom: 50%;
   transform: translateY(50%);
+  animation: popup-in-left 0.2s ease;
 }
 
 .hint-popup-1::after {
@@ -548,6 +548,7 @@ function next() {
   right: auto;
   bottom: 50%;
   transform: translateY(50%);
+  animation: popup-in-right 0.2s ease;
 }
 
 .hint-popup-2::after {
@@ -575,6 +576,16 @@ function next() {
 @keyframes popup-in {
   from { opacity: 0; transform: translateX(-50%) translateY(6px); }
   to   { opacity: 1; transform: translateX(-50%) translateY(0); }
+}
+
+@keyframes popup-in-left {
+  from { opacity: 0; transform: translateY(calc(50% + 6px)); }
+  to   { opacity: 1; transform: translateY(50%); }
+}
+
+@keyframes popup-in-right {
+  from { opacity: 0; transform: translateY(calc(50% + 6px)); }
+  to   { opacity: 1; transform: translateY(50%); }
 }
 
 .target-name {
