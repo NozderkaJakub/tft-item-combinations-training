@@ -8,5 +8,6 @@ export const router = createRouter({
     { path: "/", redirect: "/training" },
     { path: "/training", component: Training },
     { path: "/cheat-sheet", component: CheatSheet },
+    { path: "/lesson", component: () => import("../views/Lesson.vue") },
   ],
 });
