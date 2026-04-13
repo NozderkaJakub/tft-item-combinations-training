@@ -1,6 +1,7 @@
 import { createRouter, createWebHashHistory } from "vue-router";
 import Training from "../views/Training.vue";
 import CheatSheet from "../views/CheatSheet.vue";
+import Learn from "../views/Learn.vue";
 
 export const router = createRouter({
   history: createWebHashHistory(),
@@ -8,6 +9,6 @@ export const router = createRouter({
     { path: "/", redirect: "/training" },
     { path: "/training", component: Training },
     { path: "/cheat-sheet", component: CheatSheet },
-    { path: "/lesson", component: () => import("../views/Lesson.vue") },
+    { path: "/learn", component: Learn },
   ],
 });
