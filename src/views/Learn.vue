@@ -272,13 +272,12 @@ function handleReset() {
             :key="name"
             class="study-card"
           >
-            <div class="study-combined">
-              <img :src="getImageUrl(name)" :alt="name" loading="lazy" />
-              <span class="item-name">{{ name }}</span>
-            </div>
-            <span class="recipe-equals">=</span>
-            <div class="study-ingredients">
-              <template v-if="getCombinedItemObj(name)?.combine">
+            <img :src="getImageUrl(name)" :alt="name" loading="lazy" class="study-combined-img" />
+            <span class="item-name">{{ name }}</span>
+
+            <template v-if="getCombinedItemObj(name)?.combine">
+              <span class="recipe-equals">=</span>
+              <div class="study-ingredients">
                 <div
                   v-for="(baseName, bi) in getCombinedItemObj(name)!.combine!"
                   :key="bi"
@@ -287,8 +286,8 @@ function handleReset() {
                   <img :src="getImageUrl(baseName)" :alt="baseName" loading="lazy" />
                   <span class="base-name">{{ baseName }}</span>
                 </div>
-              </template>
-            </div>
+              </div>
+            </template>
           </div>
         </div>
 
@@ -410,8 +409,8 @@ function handleReset() {
           </div>
         </div>
 
-        <!-- Base item pool -->
-        <div class="base-pool">
+        <!-- Base item pool — hidden after submit -->
+        <div v-if="!submitResult" class="base-pool">
           <p class="pool-label">Base items</p>
           <div class="pool-grid">
             <div
@@ -520,30 +519,26 @@ function handleReset() {
 /* ---- Study grid ---- */
 .study-grid {
   display: flex;
-  flex-direction: column;
-  gap: 1rem;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  justify-content: center;
   width: 100%;
-  max-width: 560px;
 }
 .study-card {
   display: flex;
-  align-items: center;
-  gap: 1rem;
-  background: #111827;
-  border: 1px solid #1e2d4a;
-  border-radius: 10px;
-  padding: 0.75rem 1rem;
-}
-.study-combined {
-  display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 4px;
-  min-width: 72px;
+  gap: 0.4rem;
+  background: #111827;
+  border: 2px solid #1e2d4a;
+  border-radius: 10px;
+  padding: 0.75rem 0.6rem;
+  width: 140px;
+  min-width: 120px;
 }
-.study-combined img {
-  width: 64px;
-  height: 64px;
+.study-combined-img {
+  width: 56px;
+  height: 56px;
   border-radius: 8px;
   border: 2px solid #c89b3c;
 }
@@ -551,21 +546,21 @@ function handleReset() {
   font-size: 0.65rem;
   color: #94a3b8;
   text-align: center;
-  max-width: 80px;
+  max-width: 120px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 .recipe-equals {
-  font-size: 1.4rem;
+  font-size: 1rem;
   color: #c89b3c;
   font-weight: 700;
   flex-shrink: 0;
 }
 .study-ingredients {
   display: flex;
-  gap: 0.5rem;
-  flex-wrap: wrap;
+  gap: 0.4rem;
+  justify-content: center;
 }
 .study-base {
   display: flex;
@@ -574,15 +569,15 @@ function handleReset() {
   gap: 3px;
 }
 .study-base img {
-  width: 48px;
-  height: 48px;
+  width: 44px;
+  height: 44px;
   border-radius: 6px;
   border: 2px solid #2d3a5a;
 }
 .base-name {
-  font-size: 0.6rem;
+  font-size: 0.58rem;
   color: #64748b;
-  max-width: 56px;
+  max-width: 52px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -981,15 +976,16 @@ function handleReset() {
 /* ---- Responsive ---- */
 @media (max-width: 600px) {
   .study-card {
-    flex-direction: column;
-    align-items: flex-start;
+    width: 120px;
+    padding: 0.5rem 0.4rem;
   }
-  .study-combined {
-    flex-direction: row;
-    gap: 0.5rem;
+  .study-combined-img {
+    width: 44px;
+    height: 44px;
   }
-  .recipe-equals {
-    display: none;
+  .study-base img {
+    width: 36px;
+    height: 36px;
   }
   .match-combined-card {
     width: 120px;
