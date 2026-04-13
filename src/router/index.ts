@@ -6,9 +6,9 @@ import Learn from "../views/Learn.vue";
 export const router = createRouter({
   history: createWebHashHistory(),
   routes: [
-    { path: "/", redirect: "/training" },
+    { path: "/", redirect: "/learn" },
+    { path: "/learn", component: Learn },
     { path: "/training", component: Training },
     { path: "/cheat-sheet", component: CheatSheet },
-    { path: "/learn", component: Learn },
   ],
 });

@@ -20,9 +20,9 @@ import { SETS, selectedSet, type SetValue } from "./composables/useItems";
       </div>
 
       <nav>
+        <RouterLink to="/learn" class="nav-link">Learn</RouterLink>
         <RouterLink to="/training" class="nav-link">Training</RouterLink>
         <RouterLink to="/cheat-sheet" class="nav-link">Cheat Sheet</RouterLink>
-        <RouterLink to="/learn" class="nav-link">Learn</RouterLink>
       </nav>
     </header>
 
