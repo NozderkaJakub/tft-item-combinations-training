@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed } from "vue";
+import { ref, computed, watch } from "vue";
 import { useLesson } from "../composables/useLesson";
 import { useItems, getImageUrl, type Item } from "../composables/useItems";
 
@@ -77,6 +77,18 @@ function initMatch() {
 
 // Initialize on mount
 initMatch();
+
+// Reset view state when the set changes (lesson state is reset in useLesson)
+watch(currentSet, () => {
+  phase.value = "study";
+  matchingCombinedItems.value = [];
+  matchingBaseItemPool.value = [];
+  assignments.value = [];
+  usedPoolIndices.value = new Set();
+  selectedCombinedIndex.value = null;
+  submitResult.value = null;
+  displayLessonIndex.value = 0;
+});
 
 // ---- Interaction ----
 
