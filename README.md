@@ -9,6 +9,10 @@ A browser-based quiz app to help **Teamfight Tactics (TFT)** players memorize it
 ## Features
 
 - **Training mode** — interactive quiz: identify the two base ingredients of a displayed combined item, with a progressive hint system and drag-and-drop / tap interaction
+- **Learn mode** — structured, lesson-based study system that teaches item recipes in two phases:
+  - **Study phase** — read and memorize up to 5 item recipes (combined item + its two base ingredients displayed as cards)
+  - **Match phase** — drag or tap base items onto the correct combined item slots; includes spaced-repetition review of items from previous lessons starting at lesson 2; submit to score and proceed
+  - Progress (score, lesson index, item ordering) is saved to `localStorage` and restored on next visit
 - **Cheat Sheet** — browseable reference grid showing all items and their recipes, with click-to-reveal popups
 - **Multi-set support** — switch between TFT sets (16, 4.5, 17) from the header
 - Fully client-side, no backend, no login required
