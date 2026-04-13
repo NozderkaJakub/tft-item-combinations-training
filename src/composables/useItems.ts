@@ -1,4 +1,4 @@
-import { ref, computed } from "vue";
+import { ref, computed, watch } from "vue";
 import allItems from "../items-clean.json";
 
 export type SetValue = 16 | 4.5 | 17;
@@ -14,8 +14,23 @@ export interface Item {
 
 export const SETS: SetValue[] = [16, 4.5, 17];
 
-// Shared set state across views
-export const selectedSet = ref<SetValue>(16);
+const STORAGE_KEY = "tft-selected-set";
+
+function loadSelectedSet(): SetValue {
+  const stored = localStorage.getItem(STORAGE_KEY);
+  if (stored !== null) {
+    const parsed = Number(stored) as SetValue;
+    if (SETS.includes(parsed)) return parsed;
+  }
+  return 17;
+}
+
+// Shared set state across views, persisted in localStorage
+export const selectedSet = ref<SetValue>(loadSelectedSet());
+
+watch(selectedSet, (val) => {
+  localStorage.setItem(STORAGE_KEY, String(val));
+});
 
 const items = allItems as Item[];
 
