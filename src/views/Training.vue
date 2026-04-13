@@ -9,21 +9,6 @@ const { baseItems, combinedItems } = useItems();
 const showHintTooltip = ref(true);
 let tooltipTimer: ReturnType<typeof setTimeout> | null = null;
 
-// Second hint tooltip – shown once ever (persisted in localStorage),
-// appears after the first hint is revealed
-const HINT2_TOOLTIP_KEY = "tft-hint2-tooltip-seen";
-const showHint2Tooltip = ref(false);
-let hint2TooltipTimer: ReturnType<typeof setTimeout> | null = null;
-
-function triggerHint2Tooltip() {
-  if (localStorage.getItem(HINT2_TOOLTIP_KEY)) return;
-  localStorage.setItem(HINT2_TOOLTIP_KEY, "1");
-  showHint2Tooltip.value = true;
-  hint2TooltipTimer = setTimeout(() => {
-    showHint2Tooltip.value = false;
-  }, 3000);
-}
-
 onMounted(() => {
   tooltipTimer = setTimeout(() => {
     showHintTooltip.value = false;
@@ -33,12 +18,11 @@ onMounted(() => {
 
 onUnmounted(() => {
   if (tooltipTimer) clearTimeout(tooltipTimer);
-  if (hint2TooltipTimer) clearTimeout(hint2TooltipTimer);
   document.removeEventListener("pointerdown", onPointerDown);
 });
 
 // --- Hint ---
-const HINT_DELAY = 1500;
+const HINT_DELAY = 700;
 const hintState = ref<"idle" | "loading" | "shown" | "loading2" | "shown2">("idle");
 const hintItem = ref<Item | null>(null);
 const hint2Item = ref<Item | null>(null);
@@ -108,7 +92,6 @@ function onTargetMouseEnter() {
       if (!targetItem.value?.combine) return;
       hintItem.value = baseItems.value.find((i) => i.name === targetItem.value!.combine![0]) ?? null;
       hintState.value = "shown";
-      triggerHint2Tooltip();
     }, HINT_DELAY);
     return;
   }
@@ -153,7 +136,6 @@ function onTargetTap(e: PointerEvent) {
     if (!targetItem.value?.combine) return;
     hintItem.value = baseItems.value.find((i) => i.name === targetItem.value!.combine![0]) ?? null;
     hintState.value = "shown";
-    triggerHint2Tooltip();
     return;
   }
 
@@ -243,13 +225,6 @@ function next() {
           <transition name="tooltip-fade">
             <div v-if="showHintTooltip && hintState === 'idle'" class="hint-tooltip">
               Tap / hover for a hint
-            </div>
-          </transition>
-
-          <!-- Second hint tooltip: shown once after first hint is revealed -->
-          <transition name="tooltip-fade">
-            <div v-if="showHint2Tooltip && (hintState === 'shown' || hintState === 'loading2' || hintState === 'shown2')" class="hint-tooltip hint-tooltip-2">
-              Tap again for a second hint
             </div>
           </transition>
 
@@ -343,7 +318,7 @@ function next() {
         >
           Confirm
         </button>
-        <button class="btn btn-next" :disabled="allSeen" @click="next">
+        <button class="btn btn-next" :disabled="allSeen || result !== 'correct'" @click="next">
           Next
         </button>
       </div>
@@ -449,11 +424,6 @@ function next() {
   border-top-color: #2d3a5a;
 }
 
-/* Second hint tooltip: same style, no repeat animation */
-.hint-tooltip-2 {
-  animation: tooltip-pulse 1s ease-in-out 0s 2;
-}
-
 @keyframes tooltip-pulse {
   0%   { color: #64748b; border-color: #2d3a5a; background: #1a2035; }
   50%  { color: #c89b3c; border-color: #c89b3c; background: #29200a; }
@@ -491,7 +461,7 @@ function next() {
   stroke-linecap: round;
   stroke-dasharray: 94.25; /* 2π × 15 */
   stroke-dashoffset: 94.25;
-  animation: ring-fill 1.5s linear forwards;
+  animation: ring-fill 0.7s linear forwards;
 }
 
 @keyframes ring-fill {

@@ -279,6 +279,10 @@ onUnmounted(() => document.removeEventListener("pointerdown", onPointerDown));
     grid-template-columns: 1fr;
     height: auto;
   }
+
+  .panel {
+    overflow-y: visible;
+  }
 }
 
 .panel {
