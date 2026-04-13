@@ -181,23 +181,18 @@ function doSubmit() {
   let correct = 0;
   let possible = 0;
 
-  const currentGroupNames = new Set(currentGroup.value?.itemNames ?? []);
-
   for (let i = 0; i < matchingCombinedItems.value.length; i++) {
     const ci = matchingCombinedItems.value[i];
     const pair = assignments.value[i];
     const ciObj = getCombinedItemObj(ci.name);
-    const isCurrentLesson = currentGroupNames.has(ci.name);
 
     const correctCombine = ciObj?.combine ?? [];
     const answer = [pair.slot1?.name ?? "", pair.slot2?.name ?? ""].sort().join("|");
     const expected = [...correctCombine].sort().join("|");
     const isCorrect = answer === expected;
 
-    if (isCurrentLesson) {
-      possible++;
-      if (isCorrect) correct++;
-    }
+    possible++;
+    if (isCorrect) correct++;
 
     results.push({ correct: isCorrect, correctCombine });
   }
@@ -234,7 +229,7 @@ function handleReset() {
     <!--  FINISHED SCREEN                                              -->
     <!-- ============================================================ -->
     <div v-if="finished" class="finished-screen">
-      <h2 class="finished-title">Lesson complete!</h2>
+      <h2 class="finished-title">Lessons complete!</h2>
       <p class="finished-sub">All {{ totalLessons }} lessons done for Set {{ currentSet }}</p>
 
       <div class="score-circle">
